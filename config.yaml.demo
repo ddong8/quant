@@ -1,0 +1,25 @@
+# 参考文档 https://doc.shinnytech.com/tqsdk/latest/profession.html
+future:
+  broker_id: xxxxxx
+  account_id: xxxxxx
+  password: xxxxxx
+
+trade:
+  code: CZCE.MA405
+  init_price: 2305
+  price_diff_step: 5
+  target_profit: 1500
+  max_position_ratio: 0.4
+
+# 参考文档 https://doc.shinnytech.com/tqsdk/latest/profession.html
+tqSDK:
+  user_name: xxxxxx
+  password: xxxxxx
+
+# 参考文档 https://github.com/Finb/bark-server/blob/master/docs/API_V2.md#python
+notification:
+  url: xxxxxx
+  device_key: xxxxxx
+  sound: xxxxxx
+  icon: xxxxxx
+  msg_url: xxxxxx
