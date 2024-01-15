@@ -6,6 +6,7 @@ future:
 
 trade:
   code: CZCE.MA405
+  direction: BUY
   init_price: 2305
   price_diff_step: 5
   target_profit: 1500

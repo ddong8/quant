@@ -36,6 +36,7 @@ SDK_USERNAME = settings["tqSDK"]["user_name"]
 SDK_PASSWORD = settings["tqSDK"]["password"]
 
 FUTURE = settings["trade"]["code"]
+DIRECTION = settings["trade"]["direction"]
 INIT_PRICE = settings["trade"]["init_price"]
 PRICE_DIFF_STEP = settings["trade"]["price_diff_step"]
 TARGET_PROFIT = settings["trade"]["target_profit"]
@@ -96,7 +97,7 @@ class FutureTask(object):
         logger.info(f"可用资金: {self.account.available}")
 
     def insert_order(self, price):
-        direction = "BUY"
+        direction = DIRECTION
         volume = 1
         order_msg = f"开仓 方向:【{direction}】数量: 【{volume}】价格: 【{price}】"
 
