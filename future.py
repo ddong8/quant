@@ -136,6 +136,7 @@ class FutureTask(object):
         logger.info(order_finished_msg)
 
     def run(self):
+        global INIT_PRICE
         kline = self.api.get_kline_serial(FUTURE, 86400)  # 获取日内k线
         total_volume = self.api.get_position(FUTURE).volume_long_today
         logger.info(
@@ -146,8 +147,9 @@ class FutureTask(object):
                 high = kline.high.iloc[-1]
                 low = kline.low.iloc[-1]
                 price = kline.close.iloc[-1]
+                total_volume = self.api.get_position(FUTURE).volume_long_today
                 logger.info(
-                    f"最新价 {price}, 最高价 {high}, 最低价 {low} -->> 当前盈利 {self.account.float_profit} 元")
+                    f"最新价 {price}, 最高价 {high}, 最低价 {low} -->> 当前持仓 {total_volume} 手, 盈利 {self.account.float_profit} 元")
 
                 if 1 - self.account.available/self.account.balance <= MAX_POSITION_RATIO and price <= INIT_PRICE:
                     self.insert_order(price)
