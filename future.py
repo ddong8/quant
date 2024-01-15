@@ -14,7 +14,7 @@ import datetime
 import yaml
 import requests
 from loguru import logger
-from tqsdk import TqAccount, TqApi, TqAuth
+from tqsdk import TqAccount, TqApi, TqAuth, TargetPosTask
 
 
 BASE_DIR = os.path.dirname(__file__)
@@ -96,50 +96,24 @@ class FutureTask(object):
         logger.info(f"账户权益: {self.account.balance}")
         logger.info(f"可用资金: {self.account.available}")
 
-    def insert_order(self, price):
-        direction = DIRECTION
-        volume = 1
-        order_msg = f"开仓 方向:【{direction}】数量: 【{volume}】价格: 【{price}】"
+    def get_step_volume(self):
+        if DIRECTION == "SELL":
+            step_volume = -1
+        else:
+            step_volume = 1
+        return step_volume
 
-        order = self.api.insert_order(symbol=FUTURE,
-                                      direction=direction, offset="OPEN", volume=volume, limit_price=price)
-
-        send_notification(order_msg, title="开仓委托",
+    def log_action(self, action, msg):
+        send_notification(order_msg, title=action,
                           category="quant", group="future")
         logger.info(order_msg)
-
-        while order.status != "FINISHED":
-            self.api.wait_update()
-
-        order_finished_msg = f"订单状态: {order.status}, 已成交: {order.volume_orign - order.volume_left} 手"
-        send_notification(order_finished_msg, title="开仓成功",
-                          category="quant", group="future")
-        logger.info(order_finished_msg)
-
-    def clearance(self, price):
-        direction = "SELL"
-        total_volume = self.api.get_position(FUTURE).volume_long_today
-        order_msg = f"已委托平仓订单 {FUTURE} {total_volume} 手"
-
-        order = self.api.insert_order(symbol=FUTURE,
-                                      direction=direction, offset="CLOSE", volume=total_volume, limit_price=price)
-
-        send_notification(order_msg, title="平仓委托",
-                          category="quant", group="future")
-        logger.info(order_msg)
-
-        while order.status != "FINISHED":
-            self.api.wait_update()
-
-        order_finished_msg = f"恭喜您, 平仓订单已完成! 盈利: {self.account.float_profit} 元 !!!"
-        send_notification(order_finished_msg, title="平仓成功",
-                          category="quant", group="future")
-        logger.info(order_finished_msg)
 
     def run(self):
         global INIT_PRICE
+        step_volume = self.get_step_volume()
         kline = self.api.get_kline_serial(FUTURE, 86400)  # 获取日内k线
         total_volume = self.api.get_position(FUTURE).volume_long_today
+        target_pos = TargetPosTask(self.api, FUTURE)
         logger.info(
             f"当前持仓 {FUTURE} {total_volume} 手  -->> 盈利 {self.account.float_profit} 元")
         while True:
@@ -153,11 +127,15 @@ class FutureTask(object):
                     f"最新价 {price}, 最高价 {high}, 最低价 {low} -->> 当前持仓 {total_volume} 手, 盈利 {self.account.float_profit} 元")
 
                 if 1 - self.account.available/self.account.balance <= MAX_POSITION_RATIO and price <= INIT_PRICE:
-                    self.insert_order(price)
+                    target_pos.set_target_volume(step_volume)
+                    order_msg = f"开仓 方向:【{DIRECTION}】数量: 【{abs(step_volume)}】价格: 【{price}】"
+                    self.log_action("开仓委托", order_msg)
                     INIT_PRICE -= PRICE_DIFF_STEP
 
                 if self.account.float_profit >= TARGET_PROFIT:
-                    self.clearance(price)
+                    target_pos.set_target_volume(0)
+                    order_msg = f"已委托平仓订单 {FUTURE} {total_volume} 手"
+                    self.log_action("平仓委托", order_msg)
 
 
 if __name__ == '__main__':
