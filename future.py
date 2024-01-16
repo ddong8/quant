@@ -108,6 +108,20 @@ class FutureTask(object):
                           category="quant", group="future")
         logger.info(msg)
 
+    def insert_order(self, price):
+        volume = 1
+        order = self.api.insert_order(symbol=FUTURE,
+                                      direction=DIRECTION, offset="OPEN", volume=volume, limit_price=price)
+
+        order_msg = f"开仓 方向:【{DIRECTION}】数量: 【{volume}】价格: 【{price}】"
+        self.log_action("开仓委托", order_msg)
+
+        while order.status != "FINISHED":
+            self.api.wait_update()
+
+        order_finished_msg = f"订单状态: {order.status}, 已成交: {order.volume_orign - order.volume_left} 手"
+        self.log_action("开仓成功", order_finished_msg)
+
     def run(self):
         global INIT_PRICE
         step_volume = self.get_step_volume()
@@ -127,15 +141,14 @@ class FutureTask(object):
                     f"最新价 {price}, 最高价 {high}, 最低价 {low} -->> 当前持仓 {total_volume} 手, 盈利 {self.account.float_profit} 元")
 
                 if 1 - self.account.available/self.account.balance <= MAX_POSITION_RATIO and price <= INIT_PRICE:
-                    target_pos.set_target_volume(step_volume)
-                    order_msg = f"开仓 方向:【{DIRECTION}】数量: 【{abs(step_volume)}】价格: 【{price}】"
-                    self.log_action("开仓委托", order_msg)
+                    self.api.create_task(self.insert_order(price))
+                    self.api.wait_update()
                     INIT_PRICE -= PRICE_DIFF_STEP
 
                 if self.account.float_profit >= TARGET_PROFIT:
                     target_pos.set_target_volume(0)
-                    order_msg = f"已委托平仓订单 {FUTURE} {total_volume} 手"
-                    self.log_action("平仓委托", order_msg)
+                    order_msg = f"已平仓 {FUTURE} {total_volume} 手"
+                    self.log_action("平仓成功", order_msg)
 
 
 if __name__ == '__main__':
