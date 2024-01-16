@@ -97,16 +97,16 @@ class FutureTask(object):
         logger.info(f"可用资金: {self.account.available}")
 
     def get_step_volume(self):
-        if DIRECTION == "SELL":
+        if DIRECTION.upper() == "SELL":
             step_volume = -1
         else:
             step_volume = 1
         return step_volume
 
     def log_action(self, action, msg):
-        send_notification(order_msg, title=action,
+        send_notification(msg, title=action,
                           category="quant", group="future")
-        logger.info(order_msg)
+        logger.info(msg)
 
     def run(self):
         global INIT_PRICE
