@@ -1,2 +1,2 @@
 source venv/bin/activate
-nohup python future.py &
+nohup python3 future.py &
