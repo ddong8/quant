@@ -96,13 +96,44 @@ class FutureTask(object):
         logger.info(f"账户权益: {self.account.balance}")
         logger.info(f"可用资金: {self.account.available}")
 
+    def get_old_volume(self):
+        if DIRECTION.upper() == "SELL":
+            old_volume = self.api.get_position(FUTURE).pos_short_today
+        else:
+            old_volume = self.api.get_position(FUTURE).pos_long_today
+        return old_volume
+
     def get_new_volume(self, old_volume):
         if DIRECTION.upper() == "SELL":
-            old_volume -= -1
+            global PRICE_DIFF_STEP
+            PRICE_DIFF_STEP = -PRICE_DIFF_STEP
+            old_volume = -old_volume
+            old_volume -= 1
         else:
             old_volume += 1
         new_volume = old_volume
         return new_volume
+
+    def is_target_price(self, price):
+        if DIRECTION.upper() == "SELL":
+            if price >= INIT_PRICE:
+                return True
+        else:
+            if price <= INIT_PRICE:
+                return True
+        return False
+
+    def is_target_profit(self):
+        if self.account.float_profit >= TARGET_PROFIT:
+            return True
+        else:
+            return False
+
+    def is_available_balance(self):
+        if 1 - self.account.available/self.account.balance <= MAX_POSITION_RATIO:
+            return True
+        else:
+            return False
 
     def log_action(self, action, msg):
         send_notification(msg, title=action,
@@ -112,7 +143,7 @@ class FutureTask(object):
     def run(self):
         global INIT_PRICE
         kline = self.api.get_kline_serial(FUTURE, 86400)  # 获取日内k线
-        history_volume = self.api.get_position(FUTURE).volume_long_today
+        history_volume = self.get_old_volume()
         target_pos = TargetPosTask(self.api, FUTURE)
         logger.info(
             f"历史持仓 {FUTURE} {history_volume} 手  -->> 盈利 {self.account.float_profit} 元")
@@ -122,18 +153,18 @@ class FutureTask(object):
                 high = kline.high.iloc[-1]
                 low = kline.low.iloc[-1]
                 price = kline.close.iloc[-1]
-                old_volume = self.api.get_position(FUTURE).volume_long_today
+                old_volume = self.get_old_volume()
                 logger.info(
                     f"最新价 {price}, 最高价 {high}, 最低价 {low} -->> 当前持仓 {old_volume} 手, 盈利 {self.account.float_profit} 元")
 
-                if 1 - self.account.available/self.account.balance <= MAX_POSITION_RATIO and price <= INIT_PRICE:
+                if self.is_available_balance() and self.is_target_price(price):
                     new_volume = self.get_new_volume(old_volume)
                     target_pos.set_target_volume(new_volume)
                     order_msg = f"开仓 方向:【{DIRECTION}】数量: 【{abs(new_volume-old_volume)}】价格: 【{price}】"
                     self.log_action("开仓委托", order_msg)
                     INIT_PRICE -= PRICE_DIFF_STEP
 
-                if self.account.float_profit >= TARGET_PROFIT:
+                if self.is_target_profit():
                     target_pos.set_target_volume(0)
                     order_msg = f"已平仓 {FUTURE} {old_volume} 手"
                     self.log_action("平仓成功", order_msg)
