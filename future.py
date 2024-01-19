@@ -87,6 +87,8 @@ def send_notification(data, title, category, group):
 class FutureTask(object):
     def __init__(self):
         self.init_trade_server()
+        self.init_price = INIT_PRICE
+        self.price_diff_step = PRICE_DIFF_STEP
 
     def init_trade_server(self):
         tqacc = TqAccount(BOKER_ID, ACCOUNT_ID, PASSWORD)
@@ -105,8 +107,7 @@ class FutureTask(object):
 
     def get_new_volume(self, old_volume):
         if DIRECTION.upper() == "SELL":
-            global PRICE_DIFF_STEP
-            PRICE_DIFF_STEP = -PRICE_DIFF_STEP
+            self.price_diff_step = -self.price_diff_step
             old_volume = -old_volume
             old_volume -= 1
         else:
@@ -116,10 +117,10 @@ class FutureTask(object):
 
     def is_target_price(self, price):
         if DIRECTION.upper() == "SELL":
-            if price >= INIT_PRICE:
+            if price >= self.init_price:
                 return True
         else:
-            if price <= INIT_PRICE:
+            if price <= self.init_price:
                 return True
         return False
 
@@ -141,7 +142,6 @@ class FutureTask(object):
         logger.info(msg)
 
     def run(self):
-        global INIT_PRICE
         kline = self.api.get_kline_serial(FUTURE, 86400)  # 获取日内k线
         history_volume = self.get_old_volume()
         target_pos = TargetPosTask(self.api, FUTURE)
@@ -162,7 +162,7 @@ class FutureTask(object):
                     target_pos.set_target_volume(new_volume)
                     order_msg = f"开仓 方向:【{DIRECTION}】数量: 【{abs(new_volume-old_volume)}】价格: 【{price}】"
                     self.log_action("开仓委托", order_msg)
-                    INIT_PRICE -= PRICE_DIFF_STEP
+                    self.init_price -= self.price_diff_step
 
                 if self.is_target_profit():
                     target_pos.set_target_volume(0)
