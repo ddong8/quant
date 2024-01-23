@@ -115,6 +115,12 @@ class FutureTask(object):
         new_volume = old_volume
         return new_volume
 
+    def update_target_price(self):
+        if DIRECTION.upper() == "SELL":
+            self.init_price += self.price_diff_step
+        else:
+            self.init_price -= self.price_diff_step
+
     def is_target_price(self, price):
         if DIRECTION.upper() == "SELL":
             if price >= self.init_price:
@@ -162,7 +168,7 @@ class FutureTask(object):
                     target_pos.set_target_volume(new_volume)
                     order_msg = f"开仓 方向:【{DIRECTION}】数量: 【{abs(new_volume-old_volume)}】价格: 【{price}】"
                     self.log_action("开仓委托", order_msg)
-                    self.init_price -= self.price_diff_step
+                    self.update_target_price()
 
                 if self.is_target_profit():
                     target_pos.set_target_volume(0)
