@@ -21,6 +21,12 @@ BASE_DIR = os.path.dirname(__file__)
 
 
 def parse_config_yaml():
+    """
+    解析配置yaml文件
+
+    :param None
+    :return None
+    """
     with open("config.yaml", 'r') as file:
         settings = yaml.safe_load(file)
     return settings
@@ -50,6 +56,12 @@ NOTIFICATION_MSG_URL = settings["notification"]["msg_url"]
 
 
 def init_log():
+    """
+    初始化日志
+
+    :param None
+    :return None
+    """
     LOG_DIR = os.path.join(BASE_DIR, "log")
     os.makedirs(LOG_DIR, exist_ok=True)
     current_time_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
@@ -58,6 +70,15 @@ def init_log():
 
 
 def send_notification(data, title, category, group):
+    """
+    通过bark推送交易通知
+
+    :param data: dict --> 消息体字典
+    :param title: str --> 消息标题
+    :param category: str --> 消息分类
+    :param group: str --> 消息分组
+    :return None
+    """
     try:
         response = requests.post(
             url=NOTIFICATION_URL,
@@ -85,12 +106,26 @@ def send_notification(data, title, category, group):
 
 
 class FutureTask(object):
+    """期货交易任务类"""
+
     def __init__(self):
+        """
+        任务初始化
+
+        :param None
+        :return None
+        """
         self.init_trade_server()
         self.init_price = INIT_PRICE
         self.price_diff_step = PRICE_DIFF_STEP
 
     def init_trade_server(self):
+        """
+        初始化行情服务器
+
+        :param None
+        :param None
+        """
         tqacc = TqAccount(BOKER_ID, ACCOUNT_ID, PASSWORD)
         self.api = TqApi(account=tqacc, auth=TqAuth(
             SDK_USERNAME, SDK_PASSWORD))
@@ -99,6 +134,12 @@ class FutureTask(object):
         logger.info(f"可用资金: {self.account.available}")
 
     def get_old_volume(self):
+        """
+        获取指定品种已有持仓数量
+
+        :param None
+        :return old_volume: int --> 已有持仓数
+        """
         if DIRECTION.upper() == "SELL":
             old_volume = self.api.get_position(FUTURE).pos_short_today
         else:
@@ -106,6 +147,12 @@ class FutureTask(object):
         return old_volume
 
     def get_new_volume(self, old_volume):
+        """
+        获取指定品种新的持仓数量
+
+        :param old_volume: int --> 已有持仓数
+        :return new_volume: int --> 新的持仓数
+        """
         if DIRECTION.upper() == "SELL":
             self.price_diff_step = -self.price_diff_step
             old_volume = -old_volume
@@ -116,12 +163,24 @@ class FutureTask(object):
         return new_volume
 
     def update_target_price(self):
+        """
+        更新目标价
+
+        :param None
+        :return None
+        """
         if DIRECTION.upper() == "SELL":
             self.init_price += self.price_diff_step
         else:
             self.init_price -= self.price_diff_step
 
     def is_target_price(self, price):
+        """
+        是否达到目标价格
+
+        :param price: float --> 当前价格
+        :param bool: boolean --> 是否达到目标价
+        """
         if DIRECTION.upper() == "SELL":
             if price >= self.init_price:
                 return True
@@ -131,23 +190,48 @@ class FutureTask(object):
         return False
 
     def is_target_profit(self):
+        """
+        是否达到目标盈利
+
+        :param None
+        :param bool: boolean --> 是否达到目标盈利
+        """
         if self.account.float_profit >= TARGET_PROFIT:
             return True
         else:
             return False
 
     def is_available_balance(self):
+        """
+        是否有可用余额
+
+        :param None
+        :param bool: boolean --> 是否有可用余额
+        """
         if 1 - self.account.available/self.account.balance <= MAX_POSITION_RATIO:
             return True
         else:
             return False
 
     def log_action(self, action, msg):
+        """
+        记录交易行为
+
+        :param action: str --> 交易行为
+        :param msg: dict --> 消息体字典
+        :return None
+        """
         send_notification(msg, title=action,
                           category="quant", group="future")
         logger.info(msg)
 
     def run(self):
+        """
+        根据K线判断增仓, 减仓及清仓点
+
+        :param None
+        :return None
+        """
         kline = self.api.get_kline_serial(FUTURE, 86400)  # 获取日内k线
         history_volume = self.get_old_volume()
         target_pos = TargetPosTask(self.api, FUTURE)
