@@ -141,9 +141,9 @@ class FutureTask(object):
         :return old_volume: int --> 已有持仓数
         """
         if DIRECTION.upper() == "SELL":
-            old_volume = self.api.get_position(FUTURE).pos_short_today
+            old_volume = self.api.get_position(FUTURE).pos_short
         else:
-            old_volume = self.api.get_position(FUTURE).pos_long_today
+            old_volume = self.api.get_position(FUTURE).pos_long
         return old_volume
 
     def get_new_volume(self, old_volume):
