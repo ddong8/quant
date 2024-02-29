@@ -133,6 +133,19 @@ class FutureTask(object):
         logger.info(f"账户权益: {self.account.balance}")
         logger.info(f"可用资金: {self.account.available}")
 
+    @property
+    def direction(self):
+        """
+        获取开仓方向
+
+        :param None
+        :return desc: string --> 开仓方向中文描述
+        """
+        if DIRECTION.upper() == "SELL":
+            return "空"
+        else:
+            return "多"
+
     def get_old_volume(self):
         """
         获取指定品种已有持仓数量
@@ -236,7 +249,7 @@ class FutureTask(object):
         history_volume = self.get_old_volume()
         target_pos = TargetPosTask(self.api, FUTURE)
         logger.info(
-            f"历史持仓 {FUTURE} {history_volume} 手  -->> 盈利 {self.account.float_profit} 元")
+            f"历史持仓 {FUTURE} {self.direction} {history_volume} 手  -->> 盈利 {self.account.float_profit} 元")
         while True:
             self.api.wait_update()
             if self.api.is_changing(kline):
