@@ -258,7 +258,7 @@ class FutureTask(object):
                 price = kline.close.iloc[-1]
                 old_volume = self.get_old_volume()
                 logger.info(
-                    f"最新价 {price}, 最高价 {high}, 最低价 {low} -->> 当前持仓 {old_volume} 手, 盈利 {self.account.float_profit} 元")
+                    f"最新价 {price}, 最高价 {high}, 最低价 {low} -->> 当前持仓 {self.direction} {old_volume} 手, 盈利 {self.account.float_profit} 元")
 
                 if self.is_available_balance() and self.is_target_price(price):
                     new_volume = self.get_new_volume(old_volume)
