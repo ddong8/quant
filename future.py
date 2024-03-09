@@ -126,10 +126,10 @@ class FutureTask(object):
         :param None
         :param None
         """
-        tqacc = TqAccount(BOKER_ID, ACCOUNT_ID, PASSWORD)
-        self.api = TqApi(account=tqacc, auth=TqAuth(
+        self.tqacc = TqAccount(BOKER_ID, ACCOUNT_ID, PASSWORD)
+        self.api = TqApi(account=self.tqacc, auth=TqAuth(
             SDK_USERNAME, SDK_PASSWORD))
-        self.account = tqacc.get_account()
+        self.account = self.tqacc.get_account()
         logger.info(f"账户权益: {self.account.balance}")
         logger.info(f"可用资金: {self.account.available}")
 
