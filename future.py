@@ -45,6 +45,7 @@ FUTURE = settings["trade"]["code"]
 DIRECTION = settings["trade"]["direction"]
 INIT_PRICE = settings["trade"]["init_price"]
 PRICE_DIFF_STEP = settings["trade"]["price_diff_step"]
+VOLUME_DIFF_STEP = settings["trade"]["volume_dff_step"]
 TARGET_PROFIT = settings["trade"]["target_profit"]
 MAX_POSITION_RATIO = settings["trade"]["max_position_ratio"]
 
@@ -116,8 +117,9 @@ class FutureTask(object):
         :return None
         """
         self.init_trade_server()
-        self.init_price = INIT_PRICE
+        self.target_price = INIT_PRICE
         self.price_diff_step = PRICE_DIFF_STEP
+        self.volume_diff_step = VOLUME_DIFF_STEP
 
     def init_trade_server(self):
         """
@@ -169,9 +171,9 @@ class FutureTask(object):
         if DIRECTION.upper() == "SELL":
             self.price_diff_step = -self.price_diff_step
             old_volume = -old_volume
-            old_volume -= 1
+            old_volume -= self.volume_diff_step
         else:
-            old_volume += 1
+            old_volume += self.volume_diff_step
         new_volume = old_volume
         return new_volume
 
@@ -183,9 +185,9 @@ class FutureTask(object):
         :return None
         """
         if DIRECTION.upper() == "SELL":
-            self.init_price += self.price_diff_step
+            self.target_price += self.price_diff_step
         else:
-            self.init_price -= self.price_diff_step
+            self.target_price -= self.price_diff_step
 
     def is_target_price(self, price):
         """
@@ -195,10 +197,10 @@ class FutureTask(object):
         :param bool: boolean --> 是否达到目标价
         """
         if DIRECTION.upper() == "SELL":
-            if price >= self.init_price:
+            if price >= self.target_price:
                 return True
         else:
-            if price <= self.init_price:
+            if price <= self.target_price:
                 return True
         return False
 
@@ -209,7 +211,7 @@ class FutureTask(object):
         :param None
         :param bool: boolean --> 是否达到目标盈利
         """
-        if self.account.float_profit >= TARGET_PROFIT:
+        if self.tqacc.get_position(FUTURE).float_profit >= TARGET_PROFIT:
             return True
         else:
             return False
@@ -260,17 +262,18 @@ class FutureTask(object):
                 logger.info(
                     f"最新价 {price}, 最高价 {high}, 最低价 {low} -->> 当前持仓 {self.direction} {old_volume} 手, 盈利 {self.account.float_profit} 元")
 
-                if self.is_available_balance() and self.is_target_price(price):
-                    new_volume = self.get_new_volume(old_volume)
-                    target_pos.set_target_volume(new_volume)
-                    order_msg = f"开仓 方向:【{self.direction}】数量: 【{abs(new_volume-old_volume)}】价格: 【{price}】"
-                    self.log_action("开仓委托", order_msg)
-                    self.update_target_price()
-
                 if self.is_target_profit():
                     target_pos.set_target_volume(0)
                     order_msg = f"已平仓 {FUTURE} {old_volume} 手"
                     self.log_action("平仓成功", order_msg)
+                    break
+
+                if self.is_available_balance() and self.is_target_price(price):
+                    new_volume = self.get_new_volume(old_volume)
+                    target_pos.set_target_volume(new_volume)
+                    self.update_target_price()
+                    order_msg = f"开仓 方向:【{self.direction}】数量: 【{self.volume_diff_step}】价格: 【{price}】"
+                    self.log_action("开仓委托", order_msg)
 
 
 if __name__ == '__main__':

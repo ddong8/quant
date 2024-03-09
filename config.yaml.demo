@@ -9,6 +9,7 @@ trade:
   direction: BUY
   init_price: 2305
   price_diff_step: 5
+  volume_dff_step: 1
   target_profit: 1500
   max_position_ratio: 0.4
 
