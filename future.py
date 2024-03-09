@@ -161,22 +161,6 @@ class FutureTask(object):
             old_volume = self.api.get_position(FUTURE).pos_long
         return old_volume
 
-    def get_new_volume(self, old_volume):
-        """
-        获取指定品种新的持仓数量
-
-        :param old_volume: int --> 已有持仓数
-        :return new_volume: int --> 新的持仓数
-        """
-        if DIRECTION.upper() == "SELL":
-            self.price_diff_step = -self.price_diff_step
-            old_volume = -old_volume
-            old_volume -= self.volume_diff_step
-        else:
-            old_volume += self.volume_diff_step
-        new_volume = old_volume
-        return new_volume
-
     def update_target_price(self):
         """
         更新目标价
@@ -269,7 +253,7 @@ class FutureTask(object):
                     break
 
                 if self.is_available_balance() and self.is_target_price(price):
-                    new_volume = self.get_new_volume(old_volume)
+                    new_volume = old_volume + self.volume_diff_step
                     target_pos.set_target_volume(new_volume)
                     self.update_target_price()
                     order_msg = f"开仓 方向:【{self.direction}】数量: 【{self.volume_diff_step}】价格: 【{price}】"
