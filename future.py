@@ -45,7 +45,7 @@ FUTURE = settings["trade"]["code"]
 DIRECTION = settings["trade"]["direction"]
 INIT_PRICE = settings["trade"]["init_price"]
 PRICE_DIFF_STEP = settings["trade"]["price_diff_step"]
-VOLUME_DIFF_STEP = settings["trade"]["volume_dff_step"]
+VOLUME_DIFF_STEP = settings["trade"]["volume_diff_step"]
 TARGET_PROFIT = settings["trade"]["target_profit"]
 MAX_POSITION_RATIO = settings["trade"]["max_position_ratio"]
 
