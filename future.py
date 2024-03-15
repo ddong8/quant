@@ -267,7 +267,7 @@ class FutureTask(object):
                     break
 
                 if self.is_available_balance() and self.is_target_price(price):
-                    new_volume = self.get_new_volume(get_new_volume)
+                    new_volume = self.get_new_volume(old_volume)
                     target_pos.set_target_volume(new_volume)
                     self.update_target_price()
                     order_msg = f"开仓 方向:【{self.direction}】数量: 【{self.volume_diff_step}】价格: 【{price}】"
